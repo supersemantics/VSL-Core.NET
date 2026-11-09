@@ -5,7 +5,7 @@ Tagged `vX.Y.Z` on `main` when a pull request merges.
 
 ---
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-09, tag `v0.1.0`)
 
 ### First release: vsl-core for .NET
 
