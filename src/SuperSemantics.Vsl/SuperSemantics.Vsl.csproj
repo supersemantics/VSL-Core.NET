@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SuperSemantics.Vsl</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageId>SuperSemantics.Vsl</PackageId>
+    <Description>Framework-agnostic VSL governance primitives (PreNode, Invariant, TerminalState, Cluster) and a hash-chained audit ledger for .NET. A port of vsl-core; ledger hashes match the Python package byte for byte.</Description>
+    <PackageTags>vsl;governance;ai-agents;audit;ledger</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Catalog\Data\drift_classes.json" LogicalName="SuperSemantics.Vsl.Catalog.drift_classes.json" />
+    <EmbeddedResource Include="Catalog\Data\legion_patterns.json" LogicalName="SuperSemantics.Vsl.Catalog.legion_patterns.json" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <InternalsVisibleTo Include="SuperSemantics.Vsl.Tests" />
+  </ItemGroup>
+
+</Project>

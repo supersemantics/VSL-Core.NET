@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SuperSemantics.Vsl/SuperSemantics.Vsl.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SuperSemantics.Vsl.Tests/SuperSemantics.Vsl.Tests.csproj" />
+  </Folder>
+</Solution>
