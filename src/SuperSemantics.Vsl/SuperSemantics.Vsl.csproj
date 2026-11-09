@@ -11,6 +11,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/supersemantics/VSL-Core.NET</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/supersemantics/VSL-Core.NET</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
