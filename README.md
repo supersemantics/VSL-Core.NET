@@ -2,7 +2,7 @@
 
 The .NET port of [vsl-core](https://github.com/supersemantics/VSL-Core): framework-agnostic and model-agnostic **VSL** (VERBA Specification Language) governance primitives, for deciding whether an automated system's next action is allowed to happen and proving that the decision was made.
 
-- NuGet package ID `SuperSemantics.Vsl` (not yet published), namespace `SuperSemantics.Vsl`.
+- NuGet package `SuperSemantics.Vsl` (`dotnet add package SuperSemantics.Vsl`), namespace `SuperSemantics.Vsl`.
 - Targets .NET 10 (LTS). No dependencies beyond the .NET base library.
 - Ports vsl-core 0.3.0, assurance rules `2026.10`.
 - **Ledger files and hashes match vsl-core byte for byte.** A ledger written by a C# agent verifies in Python, and the other way round, and both can write to the same file at the same time.
@@ -164,4 +164,4 @@ src/SuperSemantics.Vsl/
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Copyright Super Semantics.
+MIT, see [LICENSE](https://github.com/supersemantics/VSL-Core.NET/blob/main/LICENSE). Copyright Super Semantics.

@@ -5,6 +5,14 @@ Tagged `vX.Y.Z` on `main` when a pull request merges.
 
 ---
 
+## 0.1.1 (unreleased): the README works as the NuGet package page
+
+**Before:** the README, which NuGet shows as the package page, said the package was "not yet published", and its LICENSE link was relative, so it broke on nuget.org.
+
+**After:** the README gives the `dotnet add package` command and links to LICENSE on GitHub. The code is unchanged from 0.1.0.
+
+**Why:** 0.1.1 is the first version published to NuGet, and a published version's page can't be changed later.
+
 ## 0.1.0 (2026-11-09, tag `v0.1.0`)
 
 ### First release: vsl-core for .NET
