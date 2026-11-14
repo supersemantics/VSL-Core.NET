@@ -1,8 +1,7 @@
 # Publishes to nuget.org when a release tag (vX.Y.Z) is pushed, through NuGet
 # Trusted Publishing: no API key is stored anywhere. nuget.org hands out a
 # key that lasts one hour, and only to this repository, this workflow file and
-# the `nuget` environment. The package also gets a GitHub build attestation,
-# checked with `gh attestation verify <file>.nupkg --repo supersemantics/VSL-Core.NET`.
+# the `nuget` environment. nuget.org signs every package it accepts.
 # A version that is already on nuget.org is skipped, not failed.
 name: Publish to NuGet
 
@@ -19,8 +18,7 @@ jobs:
     environment: nuget
     permissions:
       contents: read
-      id-token: write      # the NuGet login and the attestation both need it
-      attestations: write
+      id-token: write      # the NuGet login exchanges it for a one-hour key
     env:
       PROJECT: src/SuperSemantics.Vsl/SuperSemantics.Vsl.csproj
     steps:
@@ -40,9 +38,6 @@ jobs:
           dotnet pack "$PROJECT" -c Release -o dist
           -p:ContinuousIntegrationBuild=true
           -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-      - uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: dist/*.nupkg
       - uses: NuGet/login@v1
         id: nuget
         with:
