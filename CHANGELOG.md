@@ -5,7 +5,15 @@ Tagged `vX.Y.Z` on `main` when a pull request merges.
 
 ---
 
-## 0.1.1 (unreleased): the README works as the NuGet package page
+## 0.1.2 (unreleased): published from GitHub Actions through NuGet Trusted Publishing
+
+**Before:** 0.1.1 was packed on a laptop and pushed to nuget.org with a personal API key.
+
+**After:** pushing a `vX.Y.Z` tag runs `.github/workflows/publish.yml`. It runs the tests, checks the tag matches the version, packs `SuperSemantics.Vsl` (with symbols), adds a GitHub build attestation, and pushes to nuget.org with a key that nuget.org issues for one hour to this repository, workflow and `nuget` environment only. No API key is stored anywhere. The code is unchanged from 0.1.1.
+
+**Why:** PyPI and npm already publish this way. A key stored on a laptop can leak and has to be rotated by hand; a one-hour key tied to this workflow can't be reused elsewhere. The attestation lets anyone check which commit and workflow built the package (`gh attestation verify`).
+
+## 0.1.1 (2026-11-12, tag `v0.1.1`): the README works as the NuGet package page
 
 **Before:** the README, which NuGet shows as the package page, said the package was "not yet published", and its LICENSE link was relative, so it broke on nuget.org.
 
