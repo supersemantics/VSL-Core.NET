@@ -65,14 +65,57 @@ public class MetricsTests
     }
 
     [Fact]
-    public void Constructs_require_an_assurance_basis_and_derive_their_level()
+    public void Constructs_are_built_without_an_assurance_basis()
     {
-        Assert.Throws<ArgumentNullException>(() => new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), null!));
-        Assert.Throws<ArgumentNullException>(() => new Invariant("i", "d", _ => Task.FromResult(true), null!));
-        var preNode = new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), new AssuranceBasis(true, F2Modification.Partial));
-        Assert.Equal(AssuranceLevel.Medium, preNode.AssuranceLevel);
+        var preNode = new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), gammaThreshold: 1.2);
+        var invariant = new Invariant("i", "d", _ => Task.FromResult(true));
+        var state = new AllowedState("a", "d", "refund under cap");
+        Assert.Equal(1.2, preNode.GammaThreshold);
+        Assert.True(invariant.CannotBeBypassed);
+        Assert.Equal("refund under cap", state.Measurement);
         Assert.Throws<ArgumentException>(() =>
-            new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), new AssuranceBasis(true, F2Modification.None), fallback: new Fallback(MaxRetries: -1)));
+            new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), fallback: new Fallback(MaxRetries: -1)));
+    }
+
+    [Fact]
+    public void A_construct_without_a_basis_still_has_one_for_older_adapters_and_reports_no_level()
+    {
+        var preNode = new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)));
+        Assert.Equal(F2Modification.None, preNode.AssuranceBasis.F2Modification);
+        Assert.NotEqual(new AssuranceBasis(true, F2Modification.None), preNode.AssuranceBasis);
+#pragma warning disable CS0618 // the deprecated members still behave as documented
+        Assert.Null(preNode.AssuranceLevel);
+        Assert.Null(new Invariant("i", "d", _ => Task.FromResult(true)).AssuranceLevel);
+        Assert.Null(new AllowedState("a", "d", "m").AssuranceLevel);
+#pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void The_obsolete_constructors_still_work_and_keep_the_basis_they_were_given()
+    {
+#pragma warning disable CS0618
+        var basis = new AssuranceBasis(true, F2Modification.Partial);
+        var preNode = new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), basis);
+        var invariant = new Invariant("i", "d", _ => Task.FromResult(true), basis);
+        var state = new AllowedState("a", "d", basis, "m");
+        Assert.Same(basis, preNode.AssuranceBasis);
+        Assert.Equal(AssuranceLevel.Medium, preNode.AssuranceLevel);
+        Assert.Equal(AssuranceLevel.Medium, invariant.AssuranceLevel);
+        Assert.Equal(AssuranceLevel.Medium, state.AssuranceLevel);
+        Assert.Throws<ArgumentNullException>(() => new PreNode("p", "d", _ => Task.FromResult(new GammaEstimate(2)), (AssuranceBasis)null!));
+#pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void The_constructors_that_take_a_basis_are_marked_obsolete()
+    {
+        foreach (var type in new[] { typeof(PreNode), typeof(Invariant), typeof(AllowedState) })
+        {
+            var withBasis = type.GetConstructors().Single(c => c.GetParameters().Any(p => p.ParameterType == typeof(AssuranceBasis)));
+            var obsolete = (ObsoleteAttribute?)Attribute.GetCustomAttribute(withBasis, typeof(ObsoleteAttribute));
+            Assert.Equal(AssuranceDeprecation.Basis, obsolete?.Message);
+            Assert.False(obsolete!.IsError);
+        }
     }
 }
 
@@ -133,9 +176,9 @@ public class GovernanceTests
     public void Invariant_registry_refuses_duplicates()
     {
         var name = $"unique-{Guid.NewGuid():N}";
-        InvariantRegistry.Register(new Invariant(name, "d", _ => Task.FromResult(true), new AssuranceBasis(true, F2Modification.None)));
+        InvariantRegistry.Register(new Invariant(name, "d", _ => Task.FromResult(true)));
         Assert.Throws<ArgumentException>(() =>
-            InvariantRegistry.Register(new Invariant(name, "d", _ => Task.FromResult(true), new AssuranceBasis(true, F2Modification.None))));
+            InvariantRegistry.Register(new Invariant(name, "d", _ => Task.FromResult(true))));
         Assert.Contains(InvariantRegistry.Registered(), i => i.Name == name);
     }
 }

@@ -61,6 +61,10 @@ public static class LedgerWire
     /// <summary>A handover record's payload key: {from_identity, to_identity, reason}.</summary>
     public const string HandoverKey = "handover";
 
+    /// <summary>An action record's payload key: {name}. Written by <see cref="VerbaLedger.WriteAction"/>
+    /// when the guarded action actually runs.</summary>
+    public const string ActionKey = "action";
+
     /// <summary>"MONITOR", "PRE_NODE", ...</summary>
     public static string ToWire(this LedgerEntryType type) => type switch
     {

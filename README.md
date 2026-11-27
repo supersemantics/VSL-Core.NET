@@ -4,7 +4,7 @@ The .NET port of [vsl-core](https://github.com/supersemantics/VSL-Core): framewo
 
 - NuGet package `SuperSemantics.Vsl` (`dotnet add package SuperSemantics.Vsl`), namespace `SuperSemantics.Vsl`.
 - Targets .NET 10 (LTS). No dependencies beyond the .NET base library.
-- Ports vsl-core 0.3.0, assurance rules `2026.10`.
+- Ports vsl-core 0.4.0, assurance rules `2026.10`.
 - **Ledger files and hashes match vsl-core byte for byte.** A ledger written by a C# agent verifies in Python, and the other way round, and both can write to the same file at the same time.
 - MIT licensed.
 
@@ -41,8 +41,6 @@ var refundPreNode = new PreNode(
             decisionId: r.DecisionId);
         return Task.FromResult(estimate);
     },
-    // No model at the guarded call: F1 = true, F2 = None.
-    assuranceBasis: new AssuranceBasis(f1PreCommitment: true, F2Modification.None),
     gammaThreshold: Thresholds.RobustGammaDefault);
 
 CompiledGate gate = new PlainReferenceAdapter().CompilePreNode(refundPreNode);
@@ -51,6 +49,7 @@ try
 {
     await gate(new RefundRequest("d-42", Amount: 120.0));   // runs before the refund
     IssueRefund();                                         // only reached if the gate passed
+    ledger.WriteAction("refund-agent", "IssueRefund", decisionId: "d-42");
 }
 catch (AutomationDeniedException denied)
 {
@@ -60,29 +59,27 @@ catch (AutomationDeniedException denied)
 record RefundRequest(string DecisionId, double Amount);
 ```
 
-## The F1/F2 assurance distinction
+`ledger.Enforcement("d-42")` then returns `Enforcement.BeforeAction`: the gate allowed the refund before it ran.
 
-Every claim about how trustworthy a governance mechanism is reduces to one test:
+## What a gate reports
 
-- **F1 (pre-commitment):** does the check run *before* the system commits to an action, with no side effect yet fired?
-- **F2 (energy-landscape modification):** how much does the application change what the model produces, judged at the call the gate guards?
+Gates take no assurance claim: build a `PreNode` or `Invariant` from its name, description and monitor or rule. Whether a gate ran before its action is computed from the ledger, not declared. `ledger.Enforcement(decisionId)` reads the order of the decision's `WriteGateDecision` and `WriteAction` records:
 
-| Gate pattern | F1 | F2 | Level |
-|---|---|---|---|
-| Amount cap before `IssueRefund` (no model involved) | true | `None` | Low |
-| Gate before a hosted-model call whose system prompt the application writes | true | `Partial` | Medium |
-| Gate before a self-hosted model call where the application steers logits or activations | true | `Full` | High |
-| A check that runs after the action, or only logs | false | any | Low |
+| Result | Meaning |
+|---|---|
+| `BeforeAction` | Every recorded action came after an allowing decision from each gate recorded before it; or a gate denied and no action was recorded. |
+| `AfterAction` | An action was recorded with no gate decision before it, or after a gate's most recent decision was a deny. |
+| `NotObserved` | The ledger can't tell: no action record to compare against, or no gate record at all. |
 
-F2 is never earned by the gate itself: allowing or blocking changes nothing about what a model produces. A hosted model API rules out `Full`. The level measures influence on the model, not enforcement: a Low gate with F1 = true still blocks every action it denies. Report the two separately.
+Pass `primitiveName` to judge one gate. `EnforcementByDecision()` does it for every decision. See [vsl-core's "What a gate reports"](https://github.com/supersemantics/VSL-Core#what-a-gate-reports).
 
-`AssuranceLevel` is derived from an `AssuranceBasis` and cannot be set directly, and an undefined `F2Modification` value is rejected. But **stating F1/F2 is not proving them**: nothing in this package checks that a stated `Full` reflects what the monitor actually does. Treat a derived level as what a developer asserted.
+**Upgrading from 0.1.x.** The constructors that take an `AssuranceBasis` still work and are marked `[Obsolete]`, so the compiler warns (CS0618): use the overload without it. The basis changes nothing. `AssuranceLevel` is obsolete too, and is `null` for a construct built without a basis. `AssuranceBasis`, `F2Modification` and `AssuranceLevel` are removed in 1.0. With `TreatWarningsAsErrors`, the warning fails the build until the argument is removed.
 
 ## The ledger doesn't write itself
 
-Compiling and calling a gate is the only automatic part. Recording that it ran is a separate act your code performs: `WriteGateDecision` for a gate's decision, `WriteMonitor`, `WriteVerification` and `Write` for the rest, and `WriteHandover` when one agent hands part of a decision to another. An agent that never writes has working gates and no audit trail, and this package cannot tell the difference.
+Compiling and calling a gate is the only automatic part. Recording that it ran is a separate act your code performs: `WriteGateDecision` for a gate's decision, `WriteAction` when the guarded action runs, `WriteMonitor`, `WriteVerification` and `Write` for the rest, and `WriteHandover` when one agent hands part of a decision to another. An agent that never writes has working gates and no audit trail, and this package cannot tell the difference.
 
-`VerifyIntegrity()` recomputes every hash and never throws. `Write` refuses to extend a chain whose last entry fails its own hash. `Audit()` runs the specification's five checks, matching causally through `causedBy` when it is set. `IssueCertificate()` returns a certificate only for a fully passing audit, and the certificate certifies the governance process, not the underlying system. `CurrentCheckpoint()` gives the chain's tip for an external party to witness, because internal consistency alone cannot detect truncation.
+`VerifyIntegrity()` recomputes every hash and never throws. `Write` refuses to extend a chain whose last entry fails its own hash. `Audit()` runs the specification's five checks, matching causally through `causedBy` when it is set; action and handover records don't count as monitoring in the gap check. `IssueCertificate()` returns a certificate only for a fully passing audit, and the certificate certifies the governance process, not the underlying system. `CurrentCheckpoint()` gives the chain's tip for an external party to witness, because internal consistency alone cannot detect truncation.
 
 `JsonlLedgerStore` appends under a lock on a sibling `.lock` file. The lock is the same one vsl-core takes (a byte-range lock on Windows, `flock` elsewhere), so .NET and Python writers can share a file. Pass `fsync: true` in production.
 
@@ -94,6 +91,7 @@ The test suite checks this package against output from the real Python package (
 - Canonical JSON: key order by code point, `\uXXXX` escaping, integers and floats kept distinct.
 - Entry hashes, cluster keys, transition and certificate hashes, and the Gamma rules, bit for bit.
 - A JSONL ledger written by this package is byte-identical to the one Python writes from the same entries.
+- `EnforcementByDecision()` reads a Python-written ledger exactly as vsl-core's `enforcement_by_decision()` does.
 
 Two rules follow from matching Python exactly:
 
@@ -106,6 +104,9 @@ Names follow .NET conventions:
 |---|---|
 | `InvariantViolation` | `InvariantViolationException` |
 | `write_gate_decision(...)` | `WriteGateDecision(...)` |
+| `write_action(...)` | `WriteAction(...)` |
+| `enforcement(decision_id)` | `Enforcement(decisionId)` |
+| `Enforcement.BEFORE_ACTION` | `Enforcement.BeforeAction` (`ToWire()` gives `BEFORE_ACTION`) |
 | `ROBUST_GAMMA_DEFAULT_THRESHOLD` | `Thresholds.RobustGammaDefault` |
 | `ASSURANCE_RULES_VERSION` | `AssuranceRules.Version` |
 | `request_re_enablement(...)` | `Governance.RequestReEnablement(...)` |
@@ -152,7 +153,7 @@ PYTHONPATH=../vsl-core/src python tools/generate_vectors.py
 src/SuperSemantics.Vsl/
 ├── Exceptions.cs        exception hierarchy
 ├── AssuranceRules.cs    rules version written into gate-decision records
-├── Metrics.cs           AssuranceBasis, GammaEstimate, Delta, Ges, Eef, Beta, thresholds
+├── Metrics.cs           GammaEstimate, Delta, Ges, Eef, Beta, thresholds (and the deprecated AssuranceBasis)
 ├── Identity.cs          IdentityKey, ClusterKey, Instance, Evidence
 ├── Constructs.cs        AllowedState, PreNode, Invariant, TerminalState, Fallback
 ├── Cluster.cs           Cluster, ClusterPreNode

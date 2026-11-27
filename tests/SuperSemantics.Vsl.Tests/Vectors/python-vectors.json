@@ -1,5 +1,5 @@
 {
- "generated_from": "vsl-core 0.3.0, rules 2026.10, Python 3.12.10",
+ "generated_from": "vsl-core 0.4.0, rules 2026.10, Python 3.12.10",
  "floats": [
   {
    "bits": "0000000000000000",
@@ -10365,10 +10365,54 @@
     "timestamp": 1762700004.25,
     "prev_hash": "5e56ec723d899cc3d9565819fa5297ef49e23cc21b2896938409c5392c16deec",
     "entry_hash": "89a1807dabd174a2eac86bab631719e3cf7f7cb1f1c80e86e1d992f806def349"
+   },
+   {
+    "entry_id": "00000000-0000-4000-8000-000000000006",
+    "sequence": 5,
+    "entry_type": "MONITOR",
+    "identity_key": "refund-agent",
+    "cluster_key": null,
+    "instance_id": null,
+    "decision_id": "d-1",
+    "caused_by": null,
+    "schema_version": "1.0",
+    "payload": {
+     "action": {
+      "name": "issue_refund"
+     },
+     "drift_detected": false
+    },
+    "timestamp": 1762700005.0,
+    "prev_hash": "89a1807dabd174a2eac86bab631719e3cf7f7cb1f1c80e86e1d992f806def349",
+    "entry_hash": "ed84148049d6f53addf61e3b5740bba74e0cd419fde4adbf9365030d1ce5da90"
+   },
+   {
+    "entry_id": "00000000-0000-4000-8000-000000000007",
+    "sequence": 6,
+    "entry_type": "MONITOR",
+    "identity_key": "refund-agent",
+    "cluster_key": null,
+    "instance_id": null,
+    "decision_id": "d-5",
+    "caused_by": null,
+    "schema_version": "1.0",
+    "payload": {
+     "action": {
+      "name": "issue_refund"
+     },
+     "drift_detected": false
+    },
+    "timestamp": 1762700006.0,
+    "prev_hash": "ed84148049d6f53addf61e3b5740bba74e0cd419fde4adbf9365030d1ce5da90",
+    "entry_hash": "947af59ac0de8ccefa419e0f6e26722adf2684447f019a382151f98ec031f56c"
    }
   ],
-  "jsonl": "{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-1\", \"entry_hash\": \"217206a94eb284c3b4b4583ea0c08f9c87d5338252833c0a1a4760f45cfed499\", \"entry_id\": \"00000000-0000-4000-8000-000000000001\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {\"allowed\": true, \"delta_estimation_error\": 0.0, \"drift_detected\": false, \"gamma_hat\": 2.5, \"gamma_threshold\": 1.1, \"primitive_name\": \"refund-within-policy\", \"required_gamma_hat\": 1.1, \"robust_gamma\": 2.5, \"rules_version\": \"2026.10\"}, \"prev_hash\": \"0000000000000000000000000000000000000000000000000000000000000000\", \"schema_version\": \"1.0\", \"sequence\": 0, \"timestamp\": 1762700000.123456}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-2\", \"entry_hash\": \"694f92595e81aa5efe2041adafe7e54f4ce01f13655d32eb566189b2b39883a8\", \"entry_id\": \"00000000-0000-4000-8000-000000000002\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": \"inst-1\", \"payload\": {\"count\": 3, \"drift_detected\": true, \"note\": \"amount 1 200 \\u20ac exceeds cap\"}, \"prev_hash\": \"217206a94eb284c3b4b4583ea0c08f9c87d5338252833c0a1a4760f45cfed499\", \"schema_version\": \"1.0\", \"sequence\": 1, \"timestamp\": 1762700001.0}\n{\"caused_by\": \"00000000-0000-4000-8000-000000000002\", \"cluster_key\": null, \"decision_id\": \"d-2\", \"entry_hash\": \"7b0297d2677d8b936aafa4bae1002b17c1431d44f2c563677b16a1f77f338879\", \"entry_id\": \"00000000-0000-4000-8000-000000000003\", \"entry_type\": \"PRE_NODE\", \"identity_key\": \"refund-agent\", \"instance_id\": \"inst-1\", \"payload\": {\"pre_node\": \"refund-within-policy\"}, \"prev_hash\": \"694f92595e81aa5efe2041adafe7e54f4ce01f13655d32eb566189b2b39883a8\", \"schema_version\": \"1.0\", \"sequence\": 2, \"timestamp\": 1762700002.5}\n{\"caused_by\": null, \"cluster_key\": \"cluster-abc\", \"decision_id\": null, \"entry_hash\": \"5e56ec723d899cc3d9565819fa5297ef49e23cc21b2896938409c5392c16deec\", \"entry_id\": \"00000000-0000-4000-8000-000000000004\", \"entry_type\": \"TERMINAL\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {}, \"prev_hash\": \"7b0297d2677d8b936aafa4bae1002b17c1431d44f2c563677b16a1f77f338879\", \"schema_version\": null, \"sequence\": 3, \"timestamp\": 1762700003.0}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-3\", \"entry_hash\": \"89a1807dabd174a2eac86bab631719e3cf7f7cb1f1c80e86e1d992f806def349\", \"entry_id\": \"00000000-0000-4000-8000-000000000005\", \"entry_type\": \"MONITOR\", \"identity_key\": \"intake-agent\", \"instance_id\": null, \"payload\": {\"drift_detected\": false, \"handover\": {\"from_identity\": \"intake-agent\", \"reason\": \"refund request\", \"to_identity\": \"refund-agent\"}}, \"prev_hash\": \"5e56ec723d899cc3d9565819fa5297ef49e23cc21b2896938409c5392c16deec\", \"schema_version\": \"1.0\", \"sequence\": 4, \"timestamp\": 1762700004.25}\n",
-  "genesis": "0000000000000000000000000000000000000000000000000000000000000000"
+  "jsonl": "{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-1\", \"entry_hash\": \"217206a94eb284c3b4b4583ea0c08f9c87d5338252833c0a1a4760f45cfed499\", \"entry_id\": \"00000000-0000-4000-8000-000000000001\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {\"allowed\": true, \"delta_estimation_error\": 0.0, \"drift_detected\": false, \"gamma_hat\": 2.5, \"gamma_threshold\": 1.1, \"primitive_name\": \"refund-within-policy\", \"required_gamma_hat\": 1.1, \"robust_gamma\": 2.5, \"rules_version\": \"2026.10\"}, \"prev_hash\": \"0000000000000000000000000000000000000000000000000000000000000000\", \"schema_version\": \"1.0\", \"sequence\": 0, \"timestamp\": 1762700000.123456}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-2\", \"entry_hash\": \"694f92595e81aa5efe2041adafe7e54f4ce01f13655d32eb566189b2b39883a8\", \"entry_id\": \"00000000-0000-4000-8000-000000000002\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": \"inst-1\", \"payload\": {\"count\": 3, \"drift_detected\": true, \"note\": \"amount 1 200 \\u20ac exceeds cap\"}, \"prev_hash\": \"217206a94eb284c3b4b4583ea0c08f9c87d5338252833c0a1a4760f45cfed499\", \"schema_version\": \"1.0\", \"sequence\": 1, \"timestamp\": 1762700001.0}\n{\"caused_by\": \"00000000-0000-4000-8000-000000000002\", \"cluster_key\": null, \"decision_id\": \"d-2\", \"entry_hash\": \"7b0297d2677d8b936aafa4bae1002b17c1431d44f2c563677b16a1f77f338879\", \"entry_id\": \"00000000-0000-4000-8000-000000000003\", \"entry_type\": \"PRE_NODE\", \"identity_key\": \"refund-agent\", \"instance_id\": \"inst-1\", \"payload\": {\"pre_node\": \"refund-within-policy\"}, \"prev_hash\": \"694f92595e81aa5efe2041adafe7e54f4ce01f13655d32eb566189b2b39883a8\", \"schema_version\": \"1.0\", \"sequence\": 2, \"timestamp\": 1762700002.5}\n{\"caused_by\": null, \"cluster_key\": \"cluster-abc\", \"decision_id\": null, \"entry_hash\": \"5e56ec723d899cc3d9565819fa5297ef49e23cc21b2896938409c5392c16deec\", \"entry_id\": \"00000000-0000-4000-8000-000000000004\", \"entry_type\": \"TERMINAL\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {}, \"prev_hash\": \"7b0297d2677d8b936aafa4bae1002b17c1431d44f2c563677b16a1f77f338879\", \"schema_version\": null, \"sequence\": 3, \"timestamp\": 1762700003.0}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-3\", \"entry_hash\": \"89a1807dabd174a2eac86bab631719e3cf7f7cb1f1c80e86e1d992f806def349\", \"entry_id\": \"00000000-0000-4000-8000-000000000005\", \"entry_type\": \"MONITOR\", \"identity_key\": \"intake-agent\", \"instance_id\": null, \"payload\": {\"drift_detected\": false, \"handover\": {\"from_identity\": \"intake-agent\", \"reason\": \"refund request\", \"to_identity\": \"refund-agent\"}}, \"prev_hash\": \"5e56ec723d899cc3d9565819fa5297ef49e23cc21b2896938409c5392c16deec\", \"schema_version\": \"1.0\", \"sequence\": 4, \"timestamp\": 1762700004.25}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-1\", \"entry_hash\": \"ed84148049d6f53addf61e3b5740bba74e0cd419fde4adbf9365030d1ce5da90\", \"entry_id\": \"00000000-0000-4000-8000-000000000006\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {\"action\": {\"name\": \"issue_refund\"}, \"drift_detected\": false}, \"prev_hash\": \"89a1807dabd174a2eac86bab631719e3cf7f7cb1f1c80e86e1d992f806def349\", \"schema_version\": \"1.0\", \"sequence\": 5, \"timestamp\": 1762700005.0}\n{\"caused_by\": null, \"cluster_key\": null, \"decision_id\": \"d-5\", \"entry_hash\": \"947af59ac0de8ccefa419e0f6e26722adf2684447f019a382151f98ec031f56c\", \"entry_id\": \"00000000-0000-4000-8000-000000000007\", \"entry_type\": \"MONITOR\", \"identity_key\": \"refund-agent\", \"instance_id\": null, \"payload\": {\"action\": {\"name\": \"issue_refund\"}, \"drift_detected\": false}, \"prev_hash\": \"ed84148049d6f53addf61e3b5740bba74e0cd419fde4adbf9365030d1ce5da90\", \"schema_version\": \"1.0\", \"sequence\": 6, \"timestamp\": 1762700006.0}\n",
+  "genesis": "0000000000000000000000000000000000000000000000000000000000000000",
+  "enforcement": {
+   "d-1": "BEFORE_ACTION",
+   "d-5": "AFTER_ACTION"
+  }
  },
  "cluster": {
   "constituents": [

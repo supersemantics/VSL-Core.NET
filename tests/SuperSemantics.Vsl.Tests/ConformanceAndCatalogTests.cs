@@ -94,7 +94,7 @@ public class ConformanceTests
     public async Task An_invariant_violation_names_its_terminal_state()
     {
         var halt = new TerminalState("halted", "No further automated refunds.");
-        var invariant = new Invariant("never-refund-twice", "d", _ => Task.FromResult(false), new AssuranceBasis(true, F2Modification.None), onViolation: halt);
+        var invariant = new Invariant("never-refund-twice", "d", _ => Task.FromResult(false), onViolation: halt);
         var gate = new PlainReferenceAdapter().CompileInvariant(invariant);
         var ex = await Assert.ThrowsAsync<InvariantViolationException>(() => gate(null));
         Assert.Equal("halted", ex.TerminalStateName);

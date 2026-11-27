@@ -1,10 +1,8 @@
 namespace SuperSemantics.Vsl;
 
 /// <summary>
-/// HIGH / MEDIUM / LOW rating per the F1/F2 test. It measures one thing: how deeply governance shapes
-/// what the model produces. Whether a gate blocks the action before it happens is F1, reported on its
-/// own: a gate with F1 = true and F2 = None is Low here, yet it still stops every action it denies.
-/// Get it from <see cref="AssuranceBasis.DerivedLevel"/>; it cannot be set on a gate directly.
+/// Deprecated; removed in 1.0. This package no longer reports an assurance level. Kept only so existing
+/// code keeps compiling. What it reports instead is <see cref="Enforcement"/>, computed from the ledger.
 /// </summary>
 public enum AssuranceLevel
 {
@@ -17,9 +15,8 @@ public enum AssuranceLevel
 }
 
 /// <summary>
-/// How fully the application modifies what the model produces at the call the gate guards. F2 is never
-/// earned by the gate itself: allowing or blocking an action changes nothing about a model's output.
-/// When unsure, pick the lowest value the code honestly supports.
+/// Deprecated; removed in 1.0. Has no effect: this package takes no F2 value from callers. Kept only so
+/// existing code keeps compiling.
 /// </summary>
 public enum F2Modification
 {
@@ -61,17 +58,20 @@ public static class MetricsWire
 }
 
 /// <summary>
-/// The F1/F2 facts an <see cref="AssuranceLevel"/> is derived from, rather than asserted:
-/// F1 = false gives Low for any F2; F1 = true with Full gives High; with Partial or Indirect gives
-/// Medium; with None gives Low (an interpretive extension of the source table, not a spec fact).
+/// Deprecated; removed in 1.0. Constructs no longer take it: the constructors that accept one are
+/// obsolete, and the value changes nothing. Kept only so existing code and adapters released before
+/// 0.2.0 keep working. Its validation and <see cref="DerivedLevel"/> are unchanged.
 /// </summary>
-/// <remarks>
-/// Stating a basis is enforced; the basis being true is not. Nothing here checks that a stated
-/// <see cref="F2Modification.Full"/> reflects what the gated monitor or rule actually does. Treat a
-/// derived level as what a developer asserted, not what was proven.
-/// </remarks>
 public sealed record AssuranceBasis
 {
+    // Held by a construct built without a basis (the normal case from 0.2.0), so adapters released
+    // before 0.2.0 that read construct.AssuranceBasis.F2Modification keep working. It states nothing:
+    // a construct's AssuranceLevel is null for it. IsNotStated takes part in record equality, so it
+    // never equals a basis a caller made. Removed in 1.0 along with the type.
+    internal static readonly AssuranceBasis NotStated = new(true, F2Modification.None) { IsNotStated = true };
+
+    internal bool IsNotStated { get; private init; }
+
     /// <summary>Creates a basis. Rejects an <see cref="F2Modification"/> value that is not a defined
     /// member (for example <c>(F2Modification)42</c>): there is no safe default.</summary>
     public AssuranceBasis(bool f1PreCommitment, F2Modification f2Modification)

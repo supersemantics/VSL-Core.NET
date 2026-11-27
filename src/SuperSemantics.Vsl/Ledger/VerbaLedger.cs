@@ -5,6 +5,36 @@ using System.Text;
 
 namespace SuperSemantics.Vsl;
 
+/// <summary>
+/// Whether a decision's gates held before its action, as the ledger shows it
+/// (<see cref="VerbaLedger.Enforcement"/>). Computed from the order of records, never declared.
+/// </summary>
+public enum Enforcement
+{
+    /// <summary>Every recorded action came after an allowing decision from each gate recorded before
+    /// it; or the gate denied and no action was recorded.</summary>
+    BeforeAction,
+    /// <summary>An action was recorded with no gate decision before it, or after a gate's most recent
+    /// decision was a deny. The gate did not hold that action.</summary>
+    AfterAction,
+    /// <summary>The ledger can't tell: there is no action record to compare against, or no gate record
+    /// at all.</summary>
+    NotObserved,
+}
+
+/// <summary>Wire spellings of <see cref="Enforcement"/>, shared with vsl-core.</summary>
+public static class EnforcementWire
+{
+    /// <summary>"BEFORE_ACTION", "AFTER_ACTION" or "NOT_OBSERVED".</summary>
+    public static string ToWire(this Enforcement enforcement) => enforcement switch
+    {
+        Enforcement.BeforeAction => "BEFORE_ACTION",
+        Enforcement.AfterAction => "AFTER_ACTION",
+        Enforcement.NotObserved => "NOT_OBSERVED",
+        _ => throw new ArgumentOutOfRangeException(nameof(enforcement)),
+    };
+}
+
 /// <summary>Which of the five audit checks passed or failed, and the entries behind each failure.</summary>
 public sealed record LedgerAuditReport(
     IReadOnlyList<string> ChecksPassed,
@@ -285,6 +315,77 @@ public sealed class VerbaLedger
         return Write(LedgerEntryType.Monitor, identityKey, clusterKey, instanceId, decisionId, causedBy, payload);
     }
 
+    /// <summary>
+    /// Records that a guarded action actually ran, under the decision's <paramref name="decisionId"/>.
+    /// Write it after the action, from the same code path that performs it: a MONITOR entry (not drift)
+    /// whose payload carries <c>action</c> = {name}. Together with the decision's gate records it is
+    /// what <see cref="Enforcement"/> reads: an action recorded before any gate decision, or after a
+    /// deny, shows the gate did not hold it.
+    /// </summary>
+    public LedgerEntry WriteAction(
+        string identityKey,
+        string actionName,
+        string decisionId,
+        string? clusterKey = null,
+        string? instanceId = null,
+        string? causedBy = null,
+        IReadOnlyDictionary<string, object?>? extraPayload = null)
+    {
+        if (string.IsNullOrEmpty(decisionId))
+        {
+            throw new ArgumentException("WriteAction needs the decisionId its gate decisions were recorded under.", nameof(decisionId));
+        }
+
+        if (string.IsNullOrWhiteSpace(actionName))
+        {
+            throw new ArgumentException("WriteAction needs the action's name.", nameof(actionName));
+        }
+
+        var payload = Merge(extraPayload);
+        payload[LedgerWire.ActionKey] = new Dictionary<string, object?> { ["name"] = actionName };
+        payload[LedgerWire.DriftDetectedKey] = false;
+        return Write(LedgerEntryType.Monitor, identityKey, clusterKey, instanceId, decisionId, causedBy, payload);
+    }
+
+    /// <summary>
+    /// Whether this decision's gates held before its action, judged only from the order of its
+    /// records. Gate records are <see cref="WriteGateDecision"/> entries and action records are
+    /// <see cref="WriteAction"/> entries, both under <paramref name="decisionId"/>. Pass
+    /// <paramref name="primitiveName"/> to judge one gate only. For each action record: every gate
+    /// with a record before it must have allowed in its most recent record, and at least one gate
+    /// record must come first.
+    /// </summary>
+    public Enforcement Enforcement(string decisionId, string? primitiveName = null) =>
+        EnforcementJudge.Judge(Store.AllEntries().Where(e => e.DecisionId == decisionId).ToList(), primitiveName);
+
+    /// <summary><see cref="Enforcement"/> for every decisionId in the ledger that has a gate or action
+    /// record, in the order each first appears.</summary>
+    public IReadOnlyDictionary<string, Enforcement> EnforcementByDecision()
+    {
+        var byDecision = new Dictionary<string, List<LedgerEntry>>(StringComparer.Ordinal);
+        var order = new List<string>();
+        foreach (var entry in Store.AllEntries())
+        {
+            if (string.IsNullOrEmpty(entry.DecisionId)) continue;
+            if (!EnforcementJudge.IsGateRecord(entry) && !EnforcementJudge.IsActionRecord(entry)) continue;
+            if (!byDecision.TryGetValue(entry.DecisionId, out var list))
+            {
+                byDecision[entry.DecisionId] = list = [];
+                order.Add(entry.DecisionId);
+            }
+
+            list.Add(entry);
+        }
+
+        var result = new Dictionary<string, Enforcement>(StringComparer.Ordinal);
+        foreach (var decisionId in order)
+        {
+            result[decisionId] = EnforcementJudge.Judge(byDecision[decisionId], primitiveName: null);
+        }
+
+        return result;
+    }
+
     /// <summary>The chain's tip, or null for an empty ledger.</summary>
     public LedgerCheckpoint? CurrentCheckpoint()
     {
@@ -324,7 +425,12 @@ public sealed class VerbaLedger
         var monitors = entries.Where(e => e.EntryType == LedgerEntryType.Monitor).ToList();
         if (maxMonitorGapSeconds is { } maxGap)
         {
-            var sorted = monitors.OrderBy(e => e.Timestamp).ToList();
+            // Action and handover records say an action ran or work moved, not that monitoring
+            // happened, so they can't fill a gap between monitor entries.
+            var sorted = monitors
+                .Where(e => !EnforcementJudge.IsActionRecord(e) && !EnforcementJudge.IsHandoverRecord(e))
+                .OrderBy(e => e.Timestamp)
+                .ToList();
             var gaps = new List<string>();
             for (var i = 1; i < sorted.Count; i++)
             {
@@ -413,4 +519,71 @@ public sealed class VerbaLedger
         ICollection c => c.Count > 0,
         _ => true,
     };
+}
+
+// Port of vsl-core's _judge_enforcement and its record tests. Outside VerbaLedger so the enum
+// Enforcement and the method VerbaLedger.Enforcement don't shadow each other.
+internal static class EnforcementJudge
+{
+    internal static bool IsGateRecord(LedgerEntry entry) =>
+        entry.EntryType == LedgerEntryType.Monitor
+        && entry.Payload.ContainsKey(LedgerWire.PrimitiveNameKey)
+        && entry.Payload.GetValueOrDefault(LedgerWire.GateAllowedKey) is bool;
+
+    internal static bool IsActionRecord(LedgerEntry entry) =>
+        entry.EntryType == LedgerEntryType.Monitor && IsObject(entry.Payload.GetValueOrDefault(LedgerWire.ActionKey));
+
+    internal static bool IsHandoverRecord(LedgerEntry entry) =>
+        entry.EntryType == LedgerEntryType.Monitor && IsObject(entry.Payload.GetValueOrDefault(LedgerWire.HandoverKey));
+
+    private static bool IsObject(object? value) =>
+        value is IReadOnlyDictionary<string, object?> or IDictionary<string, object?>;
+
+    internal static Enforcement Judge(IReadOnlyList<LedgerEntry> records, string? primitiveName)
+    {
+        var ordered = records.OrderBy(e => e.Sequence).ToList();
+        var gates = ordered
+            .Where(e => IsGateRecord(e) && (primitiveName is null || Equals(e.Payload[LedgerWire.PrimitiveNameKey], primitiveName)))
+            .ToList();
+        var actions = ordered.Where(IsActionRecord).ToList();
+        if (gates.Count == 0)
+        {
+            return actions.Count > 0 && primitiveName is null ? Enforcement.AfterAction : Enforcement.NotObserved;
+        }
+
+        if (actions.Count == 0)
+        {
+            // A deny with no action after it held. An allow with no action record can't be judged:
+            // the action may have run unrecorded.
+            return LatestBefore(gates, int.MaxValue).Values.All(allowed => allowed)
+                ? Enforcement.NotObserved
+                : Enforcement.BeforeAction;
+        }
+
+        foreach (var action in actions)
+        {
+            var latest = LatestBefore(gates, action.Sequence);
+            if (latest.Count == 0 || !latest.Values.All(allowed => allowed))
+            {
+                return Enforcement.AfterAction;
+            }
+        }
+
+        return Enforcement.BeforeAction;
+    }
+
+    private static Dictionary<string, bool> LatestBefore(List<LedgerEntry> gates, int sequence)
+    {
+        var latest = new Dictionary<string, bool>(StringComparer.Ordinal);
+        foreach (var gate in gates)
+        {
+            if (gate.Sequence < sequence)
+            {
+                latest[Convert.ToString(gate.Payload[LedgerWire.PrimitiveNameKey], System.Globalization.CultureInfo.InvariantCulture) ?? ""] =
+                    (bool)gate.Payload[LedgerWire.GateAllowedKey]!;
+            }
+        }
+
+        return latest;
+    }
 }
