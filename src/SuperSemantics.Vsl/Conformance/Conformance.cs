@@ -67,9 +67,6 @@ public sealed class PlainReferenceAdapter : IVslAdapter
 /// </summary>
 public static class ConformanceSuite
 {
-    // Synthetic formation-layer, full-F2 checks: High is the justified claim for them.
-    private static readonly AssuranceBasis HighAssurance = new(true, F2Modification.Full);
-
     /// <summary>
     /// Runs every check. An empty list means fully conformant. Throws <see cref="ConformanceException"/>
     /// only when the adapter is too broken for the suite to run (a compile method returning null).
@@ -101,7 +98,6 @@ public static class ConformanceSuite
             "conformance-blocking",
             "Conformance check: below-threshold Gamma must block.",
             _ => Task.FromResult(new GammaEstimate(0.1)),
-            HighAssurance,
             gammaThreshold: 1.1);
         var gate = Require(adapter, nameof(IVslAdapter.CompilePreNode), adapter.CompilePreNode(preNode));
 
@@ -137,7 +133,6 @@ public static class ConformanceSuite
             "conformance-passing",
             "Conformance check: above-threshold Gamma must pass through.",
             _ => Task.FromResult(new GammaEstimate(5.0)),
-            HighAssurance,
             gammaThreshold: 1.1);
         var gate = Require(adapter, nameof(IVslAdapter.CompilePreNode), adapter.CompilePreNode(preNode));
 
@@ -166,8 +161,7 @@ public static class ConformanceSuite
         var invariant = new Invariant(
             "conformance-invariant-fail",
             "Conformance check: a failing rule must raise InvariantViolation.",
-            _ => Task.FromResult(false),
-            HighAssurance);
+            _ => Task.FromResult(false));
         var gate = Require(adapter, nameof(IVslAdapter.CompileInvariant), adapter.CompileInvariant(invariant));
 
         try
@@ -192,8 +186,7 @@ public static class ConformanceSuite
         var invariant = new Invariant(
             "conformance-invariant-pass",
             "Conformance check: a passing rule must not raise.",
-            _ => Task.FromResult(true),
-            HighAssurance);
+            _ => Task.FromResult(true));
         var gate = Require(adapter, nameof(IVslAdapter.CompileInvariant), adapter.CompileInvariant(invariant));
 
         try
@@ -217,7 +210,6 @@ public static class ConformanceSuite
             "conformance-reusable",
             "Conformance check: a compiled gate must be reusable across calls.",
             input => Task.FromResult(new GammaEstimate(Equals(input, "good") ? 5.0 : 0.1)),
-            HighAssurance,
             gammaThreshold: 1.1);
         var gate = Require(adapter, nameof(IVslAdapter.CompilePreNode), adapter.CompilePreNode(preNode));
 

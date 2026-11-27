@@ -56,6 +56,21 @@ public class PythonVectorTests
     }
 
     [Fact]
+    public void Enforcement_reads_a_python_ledger_as_python_does()
+    {
+        var store = new InMemoryLedgerStore();
+        foreach (var python in PythonEntries())
+        {
+            store.Append(python with { Sequence = -1, PrevHash = "", EntryHash = "" });
+        }
+
+        var expected = Obj(Obj(Vectors["ledger"])["enforcement"]).ToDictionary(kv => kv.Key, kv => (string)kv.Value!);
+        var actual = new VerbaLedger(store).EnforcementByDecision().ToDictionary(kv => kv.Key, kv => kv.Value.ToWire());
+        Assert.Equal(expected, actual);
+        Assert.Equal(["d-1", "d-5"], actual.Keys);
+    }
+
+    [Fact]
     public void Sealing_the_same_drafts_gives_the_same_chain()
     {
         var store = new InMemoryLedgerStore();
@@ -80,11 +95,11 @@ public class PythonVectorTests
             File.WriteAllText(path, (string)Obj(Vectors["ledger"])["jsonl"]!);
             var ledger = new VerbaLedger(new JsonlLedgerStore(path));
             Assert.True(ledger.VerifyIntegrity());
-            Assert.Equal(4, ledger.Store.LastEntry()!.Sequence);
+            Assert.Equal(6, ledger.Store.LastEntry()!.Sequence);
 
             // And appending continues the same chain.
             var next = ledger.WriteMonitor("refund-agent", driftDetected: false);
-            Assert.Equal(5, next.Sequence);
+            Assert.Equal(7, next.Sequence);
             Assert.True(ledger.VerifyIntegrity());
         }
         finally

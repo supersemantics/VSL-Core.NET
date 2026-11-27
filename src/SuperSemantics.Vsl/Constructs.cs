@@ -16,14 +16,41 @@ public delegate Task<bool> InvariantRule(object? candidateInput);
 /// <summary>A formation-layer intervention, given the Fallback's delta factor.</summary>
 public delegate Task<bool> FormationLayerIntervention(double deltaFactor);
 
+/// <summary>The messages of the deprecated assurance members.</summary>
+public static class AssuranceDeprecation
+{
+    /// <summary>On the constructors that take an <see cref="AssuranceBasis"/>.</summary>
+    public const string Basis =
+        "assuranceBasis is no longer used; enforcement is computed from the ledger (VerbaLedger.Enforcement). "
+        + "Use the constructor without it; it will be removed in 1.0.";
+
+    /// <summary>On <c>AssuranceLevel</c>.</summary>
+    public const string Level =
+        "AssuranceLevel is deprecated and will be removed in 1.0; this package no longer reports an assurance level. "
+        + "Use VerbaLedger.Enforcement(decisionId).";
+
+    internal static AssuranceLevel? LevelOf(AssuranceBasis basis) => basis.IsNotStated ? null : basis.DerivedLevel;
+}
+
 /// <summary>
-/// A state meeting every required prerequisite and validity condition. Its assurance level is derived
-/// from <see cref="AssuranceBasis"/>, never set directly.
+/// A state meeting every required prerequisite and validity condition.
 /// </summary>
 public sealed record AllowedState
 {
     /// <summary>Creates an Allowed State.</summary>
+    public AllowedState(string name, string description, string measurement, IEnumerable<string>? validityConditions = null)
+        : this(name, description, AssuranceBasis.NotStated, measurement, validityConditions, 0)
+    {
+    }
+
+    /// <summary>Creates an Allowed State with a basis, which is ignored.</summary>
+    [Obsolete(AssuranceDeprecation.Basis)]
     public AllowedState(string name, string description, AssuranceBasis assuranceBasis, string measurement, IEnumerable<string>? validityConditions = null)
+        : this(name, description, assuranceBasis, measurement, validityConditions, 0)
+    {
+    }
+
+    private AllowedState(string name, string description, AssuranceBasis assuranceBasis, string measurement, IEnumerable<string>? validityConditions, int _)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(assuranceBasis);
@@ -38,14 +65,15 @@ public sealed record AllowedState
     public string Name { get; }
     /// <summary>Description.</summary>
     public string Description { get; }
-    /// <summary>The F1/F2 facts.</summary>
+    /// <summary>Deprecated: a basis passed to the obsolete constructor, else a placeholder that states nothing.</summary>
     public AssuranceBasis AssuranceBasis { get; }
     /// <summary>How the state is measured.</summary>
     public string Measurement { get; }
     /// <summary>Validity conditions.</summary>
     public IReadOnlyList<string> ValidityConditions { get; }
-    /// <summary>Derived from <see cref="AssuranceBasis"/>.</summary>
-    public AssuranceLevel AssuranceLevel => AssuranceBasis.DerivedLevel;
+    /// <summary>Deprecated: the level of a passed basis, else null.</summary>
+    [Obsolete(AssuranceDeprecation.Level)]
+    public AssuranceLevel? AssuranceLevel => AssuranceDeprecation.LevelOf(AssuranceBasis);
 }
 
 /// <summary>A state that must not occur; corresponds to a Drift Node.</summary>
@@ -87,7 +115,20 @@ public sealed record TerminalState
 /// </summary>
 public sealed class Invariant
 {
-    /// <summary>Creates an Invariant. <paramref name="assuranceBasis"/> is required, as for a PreNode.</summary>
+    /// <summary>Creates an Invariant.</summary>
+    public Invariant(
+        string name,
+        string description,
+        InvariantRule rule,
+        string scope = "ALL_STATES",
+        bool cannotBeBypassed = true,
+        TerminalState? onViolation = null)
+        : this(name, description, rule, AssuranceBasis.NotStated, scope, cannotBeBypassed, onViolation, 0)
+    {
+    }
+
+    /// <summary>Creates an Invariant with a basis, which is ignored.</summary>
+    [Obsolete(AssuranceDeprecation.Basis)]
     public Invariant(
         string name,
         string description,
@@ -96,6 +137,19 @@ public sealed class Invariant
         string scope = "ALL_STATES",
         bool cannotBeBypassed = true,
         TerminalState? onViolation = null)
+        : this(name, description, rule, assuranceBasis, scope, cannotBeBypassed, onViolation, 0)
+    {
+    }
+
+    private Invariant(
+        string name,
+        string description,
+        InvariantRule rule,
+        AssuranceBasis assuranceBasis,
+        string scope,
+        bool cannotBeBypassed,
+        TerminalState? onViolation,
+        int _)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(rule);
@@ -115,7 +169,7 @@ public sealed class Invariant
     public string Description { get; }
     /// <summary>The rule.</summary>
     public InvariantRule Rule { get; }
-    /// <summary>The F1/F2 facts.</summary>
+    /// <summary>Deprecated: a basis passed to the obsolete constructor, else a placeholder that states nothing.</summary>
     public AssuranceBasis AssuranceBasis { get; }
     /// <summary>Scope (default "ALL_STATES").</summary>
     public string Scope { get; }
@@ -123,8 +177,9 @@ public sealed class Invariant
     public bool CannotBeBypassed { get; }
     /// <summary>The Terminal State a violation enters, if decided.</summary>
     public TerminalState? OnViolation { get; }
-    /// <summary>Derived from <see cref="AssuranceBasis"/>.</summary>
-    public AssuranceLevel AssuranceLevel => AssuranceBasis.DerivedLevel;
+    /// <summary>Deprecated: the level of a passed basis, else null.</summary>
+    [Obsolete(AssuranceDeprecation.Level)]
+    public AssuranceLevel? AssuranceLevel => AssuranceDeprecation.LevelOf(AssuranceBasis);
 }
 
 /// <summary>
@@ -133,7 +188,20 @@ public sealed class Invariant
 /// </summary>
 public sealed class PreNode
 {
-    /// <summary>Creates a PreNode. <paramref name="assuranceBasis"/> is required.</summary>
+    /// <summary>Creates a PreNode.</summary>
+    public PreNode(
+        string name,
+        string description,
+        DriftMonitor monitor,
+        double gammaThreshold = Thresholds.RobustGammaDefault,
+        FormationLayerIntervention? intervention = null,
+        Fallback? fallback = null)
+        : this(name, description, monitor, AssuranceBasis.NotStated, gammaThreshold, intervention, fallback, 0)
+    {
+    }
+
+    /// <summary>Creates a PreNode with a basis, which is ignored.</summary>
+    [Obsolete(AssuranceDeprecation.Basis)]
     public PreNode(
         string name,
         string description,
@@ -142,6 +210,19 @@ public sealed class PreNode
         double gammaThreshold = Thresholds.RobustGammaDefault,
         FormationLayerIntervention? intervention = null,
         Fallback? fallback = null)
+        : this(name, description, monitor, assuranceBasis, gammaThreshold, intervention, fallback, 0)
+    {
+    }
+
+    private PreNode(
+        string name,
+        string description,
+        DriftMonitor monitor,
+        AssuranceBasis assuranceBasis,
+        double gammaThreshold,
+        FormationLayerIntervention? intervention,
+        Fallback? fallback,
+        int _)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(monitor);
@@ -172,7 +253,7 @@ public sealed class PreNode
     public string Description { get; }
     /// <summary>The monitor.</summary>
     public DriftMonitor Monitor { get; }
-    /// <summary>The F1/F2 facts.</summary>
+    /// <summary>Deprecated: a basis passed to the obsolete constructor, else a placeholder that states nothing.</summary>
     public AssuranceBasis AssuranceBasis { get; }
     /// <summary>The Gamma threshold (default 1.1).</summary>
     public double GammaThreshold { get; }
@@ -180,8 +261,9 @@ public sealed class PreNode
     public FormationLayerIntervention? Intervention { get; }
     /// <summary>The Fallback.</summary>
     public Fallback Fallback { get; }
-    /// <summary>Derived from <see cref="AssuranceBasis"/>.</summary>
-    public AssuranceLevel AssuranceLevel => AssuranceBasis.DerivedLevel;
+    /// <summary>Deprecated: the level of a passed basis, else null.</summary>
+    [Obsolete(AssuranceDeprecation.Level)]
+    public AssuranceLevel? AssuranceLevel => AssuranceDeprecation.LevelOf(AssuranceBasis);
 }
 
 /// <summary>A process-wide registry of Invariants. Refuses duplicate names rather than overwriting.</summary>

@@ -26,6 +26,7 @@ from vsl_core.ledger import (
     LedgerEntry,
     LedgerEntryType,
     VerbaCertificate,
+    VerbaLedger,
     _compute_entry_hash,
     _seal,
     GENESIS_HASH,
@@ -148,10 +149,31 @@ def ledger_chain() -> dict:
             timestamp=1762700004.25,
             entry_id="00000000-0000-4000-8000-000000000005",
         ),
+        # Action records, the shape write_action() writes (vsl-core 0.4.0): one after d-1's allowing
+        # gate decision, one under d-5 with no gate decision at all.
+        LedgerEntry(
+            entry_type=LedgerEntryType.MONITOR,
+            identity_key="refund-agent",
+            decision_id="d-1",
+            schema_version="1.0",
+            payload={"action": {"name": "issue_refund"}, "drift_detected": False},
+            timestamp=1762700005.0,
+            entry_id="00000000-0000-4000-8000-000000000006",
+        ),
+        LedgerEntry(
+            entry_type=LedgerEntryType.MONITOR,
+            identity_key="refund-agent",
+            decision_id="d-5",
+            schema_version="1.0",
+            payload={"action": {"name": "issue_refund"}, "drift_detected": False},
+            timestamp=1762700006.0,
+            entry_id="00000000-0000-4000-8000-000000000007",
+        ),
     ]
     sealed = [store.append(d).to_dict() for d in drafts]
     jsonl = "".join(json.dumps(e, sort_keys=True) + "\n" for e in sealed)
-    return {"entries": sealed, "jsonl": jsonl, "genesis": GENESIS_HASH}
+    enforcement = {d: e.value for d, e in VerbaLedger(store).enforcement_by_decision().items()}
+    return {"entries": sealed, "jsonl": jsonl, "genesis": GENESIS_HASH, "enforcement": enforcement}
 
 
 def misc() -> dict:

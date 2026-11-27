@@ -5,6 +5,21 @@ Tagged `vX.Y.Z` on `main` when a pull request merges.
 
 ---
 
+## 0.2.0 (unreleased): vsl-core 0.4.0, no F2 claims
+
+**Before:** `PreNode`, `Invariant` and `AllowedState` required an `AssuranceBasis` declaring F1/F2, and `AssuranceLevel` derived High, Medium or Low from it. Nothing checked the declaration against what the code does, so a gate could claim `F2Modification.Full` with no basis in fact.
+
+**After:** the constructs take no assurance basis. Whether a gate held before its action is computed from the ledger, as in vsl-core 0.4.0:
+
+- `ledger.WriteAction(identityKey, actionName, decisionId)` records that the guarded action ran, in the same payload shape as vsl-core's `write_action`.
+- `ledger.Enforcement(decisionId, primitiveName?)` returns `Enforcement.BeforeAction`, `AfterAction` or `NotObserved` from the order of the decision's gate and action records; `EnforcementByDecision()` does it for every decision. `ToWire()` gives vsl-core's spellings.
+- `Audit()`'s monitoring-gap check no longer counts action or handover records as monitoring. It still has five checks, and the assurance rules version stays `2026.10`.
+- The Python vectors are regenerated from vsl-core 0.4.0 with two action records, and a test checks `EnforcementByDecision()` reads that ledger as Python does. Every other vector is unchanged.
+
+The constructors that take an `AssuranceBasis` still work and are `[Obsolete]` (a CS0618 warning, an error under `TreatWarningsAsErrors`): use the overload without it. The basis changes nothing. A construct built without one still has an `AssuranceBasis` placeholder, so adapters built against 0.1.x that read `AssuranceBasis.F2Modification` keep working. `AssuranceLevel` is obsolete and now `AssuranceLevel?`: `null` without a basis. `AssuranceBasis`, `F2Modification` and `AssuranceLevel` are removed in 1.0. The conformance suite builds its gates without a basis.
+
+**Why:** a declared level could not be checked, so it could be wrong without anyone knowing; the order of records in the ledger can be.
+
 ## Unreleased: the publish workflow no longer adds a GitHub build attestation
 
 **Before:** 0.1.2's publish workflow added a GitHub build attestation for the package, and this CHANGELOG said anyone could check the package with `gh attestation verify`.
