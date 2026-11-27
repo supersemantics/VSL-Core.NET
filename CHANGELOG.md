@@ -5,7 +5,7 @@ Tagged `vX.Y.Z` on `main` when a pull request merges.
 
 ---
 
-## 0.2.0 (unreleased): vsl-core 0.4.0, no F2 claims
+## 0.2.0 (2026-11-27, tag `v0.2.0`): vsl-core 0.4.0, no F2 claims
 
 **Before:** `PreNode`, `Invariant` and `AllowedState` required an `AssuranceBasis` declaring F1/F2, and `AssuranceLevel` derived High, Medium or Low from it. Nothing checked the declaration against what the code does, so a gate could claim `F2Modification.Full` with no basis in fact.
 
@@ -20,11 +20,11 @@ The constructors that take an `AssuranceBasis` still work and are `[Obsolete]` (
 
 **Why:** a declared level could not be checked, so it could be wrong without anyone knowing; the order of records in the ledger can be.
 
-## Unreleased: the publish workflow no longer adds a GitHub build attestation
+## Also released in 0.2.0: the publish workflow no longer adds a GitHub build attestation
 
 **Before:** 0.1.2's publish workflow added a GitHub build attestation for the package, and this CHANGELOG said anyone could check the package with `gh attestation verify`.
 
-**After:** the attestation step is gone, and the 0.1.2 entry below is corrected. Publishing is otherwise unchanged: Trusted Publishing, a one-hour key, no stored API key. No new package version: nothing in the package changes.
+**After:** the attestation step is gone, and the 0.1.2 entry below is corrected. Publishing is otherwise unchanged: Trusted Publishing, a one-hour key, no stored API key. This changed no package code; it shipped with 0.2.0, the first version published without the attestation.
 
 **Why:** nuget.org adds its own repository signature to every package it accepts, which changes the file. The attestation covered only the file built in GitHub Actions, never the one you download from nuget.org, so it couldn't be used to check that download. To check a package from nuget.org, use its signature (`dotnet nuget verify --all <file>.nupkg`).
 
